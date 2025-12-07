@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-dotenv
+supabase
+google-api-python-client
+google-auth
+reportlab
+requests
+pydantic
