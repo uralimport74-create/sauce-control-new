@@ -44,8 +44,28 @@ def get_machines():
     return sheets_service.get_machines()
 
 @app.get("/api/brands")
-def get_brands():
-    return sheets_service.get_brands()
+def get_brands_api():
+    brands = sheets_service.get_brands()
+    try:
+        count = len(brands)
+    except TypeError:
+        count = -1
+
+    logger.info("GET /api/brands -> %s брендов", count)
+
+    if count > 0:
+        example = brands[0]
+        try:
+            if hasattr(example, "dict"):
+                logger.info("Пример бренда: %s", example.dict())
+            elif hasattr(example, "model_dump"):
+                logger.info("Пример бренда: %s", example.model_dump())
+            else:
+                logger.info("Пример бренда (raw): %s", example)
+        except Exception as e:
+            logger.warning("Не удалось залогировать пример бренда: %s", e)
+
+    return brands
 
 @app.post("/api/auth/login")
 def login(req: dict):
@@ -76,4 +96,5 @@ else:
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
