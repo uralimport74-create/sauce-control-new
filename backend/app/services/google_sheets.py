@@ -150,41 +150,86 @@ class GoogleSheetsService:
                 ))
         return machines
 
-    def get_brands(self) -> List[Brand]:
-        # Ищем лист brands
+        def get_brands(self) -> List[Brand]:
+        """Читает лист brands и возвращает список Brand с подробным логированием"""
         rows = self._get_values(["brands", "brands - brands", "Бренды"])
-        if not rows: return []
+        if not rows:
+            print("⚠️ get_brands: не нашли ни одной строки в листах ['brands', 'brands - brands', 'Бренды']")
+            return []
 
         header = rows[0]
         data = rows[1:]
 
-        # Ваши заголовки: Тип, Категория, Рецептура, Бренд, кол-во шт в коробке, aliases
-        # ВАЖНО: Ищем "Бренд" (короткое имя), а не "brand_1c"
-        idx_brand = self._find_exact_col(header, ["Бренд", "Brand"]) 
-        idx_type = self._find_exact_col(header, ["Тип", "Type"])
-        idx_cat = self._find_exact_col(header, ["Категория", "Category"])
-        idx_rec = self._find_exact_col(header, ["Рецептура", "Recipe"])
-        idx_qty = self._find_exact_col(header, ["кол-во шт в коробке", "items", "qty"])
-        idx_alias = self._find_exact_col(header, ["aliases", "алиасы"])
+        print("get_brands: заголовки листа =", header)
 
-        brands = []
-        for row in data:
-            if idx_brand == -1 or len(row) <= idx_brand: continue
-            
-            b_name = row[idx_brand].strip()
-            if not b_name: continue
+        # Ищем индексы колонок, поддерживаем несколько вариантов названий
+        idx_brand = self._find_exact_col(header, ["Бренд", "brand", "Brand"])
+        idx_type  = self._find_exact_col(header, ["Тип", "тип", "Type", "Тип упаковки"])
+        idx_cat   = self._find_exact_col(header, ["Категория", "category", "Category"])
+        idx_rec   = self._find_exact_col(header, ["Рецептура", "recipe", "Recipe"])
+        idx_qty   = self._find_exact_col(header, ["кол-во шт в коробке", "кол-во", "items", "qty"])
+        idx_alias = self._find_exact_col(header, ["aliases", "алиасы", "алиасы/aliases"])
 
-            qty = 0
-            if idx_qty != -1 and len(row) > idx_qty:
-                val = str(row[idx_qty]).strip()
-                if val.isdigit(): qty = int(val)
+        print(
+            "get_brands: индексы колонок ->",
+            f"idx_brand={idx_brand}, idx_type={idx_type}, idx_cat={idx_cat},",
+            f"idx_rec={idx_rec}, idx_qty={idx_qty}, idx_alias={idx_alias}",
+        )
 
-            brands.append(Brand(
+        if idx_brand == -1:
+            print("❌ get_brands: не нашли колонку 'Бренд' — возвращаем пустой список")
+            return []
+
+        def safe_str(row, idx: int) -> str:
+            if idx == -1 or idx >= len(row):
+                return ""
+            return str(row[idx]).strip()
+
+        def safe_int(row, idx: int) -> int:
+            if idx == -1 or idx >= len(row):
+                return 0
+            val = str(row[idx]).strip().replace(" ", "").replace(",", ".")
+            try:
+                # на случай, если в ячейке '250.0' или '250,0'
+                return int(float(val))
+            except Exception:
+                return 0
+
+        brands: List[Brand] = []
+
+        for i, row in enumerate(data, start=2):  # start=2, т.к. строка 1 — заголовки
+            if idx_brand >= len(row):
+                print(f"get_brands: строка {i} пропущена — нет колонки 'Бренд'")
+                continue
+
+            b_name = str(row[idx_brand]).strip()
+            if not b_name:
+                # пустая строка / нет названия бренда
+                continue
+
+            brand = Brand(
                 brand_name=b_name,
-                type=row[idx_type].strip() if idx_type != -1 and len(row) > idx_type else "",
-                category=row[idx_cat].strip() if idx_cat != -1 and len(row) > idx_cat else "",
-                recipe=row[idx_rec].strip() if idx_rec != -1 and len(row) > idx_rec else "",
-                items_per_box=qty,
-                aliases=row[idx_alias].strip() if idx_alias != -1 and len(row) > idx_alias else ""
-            ))
+                type=safe_str(row, idx_type),
+                category=safe_str(row, idx_cat),
+                recipe=safe_str(row, idx_rec),
+                items_per_box=safe_int(row, idx_qty),
+                aliases=safe_str(row, idx_alias),
+            )
+            brands.append(brand)
+
+        print(f"get_brands: загружено брендов: {len(brands)}")
+
+        if brands:
+            example = brands[0]
+            try:
+                if hasattr(example, "dict"):
+                    print("get_brands: пример первой записи:", example.dict())
+                elif hasattr(example, "model_dump"):
+                    print("get_brands: пример первой записи:", example.model_dump())
+                else:
+                    print("get_brands: пример первой записи (raw):", example)
+            except Exception as e:
+                print("get_brands: не удалось вывести пример записи:", e)
+
+        # ВАЖНО: даже если type пустой, мы его возвращаем — фронт покажет пустой список типов
         return brands
