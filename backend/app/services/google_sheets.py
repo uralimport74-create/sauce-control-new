@@ -96,7 +96,7 @@ class GoogleSheetsService:
                     return i
         return -1
 
-        def get_users(self) -> List[User]:
+    def get_users(self) -> List[User]:
         """
         Читает лист users и возвращает список User.
         Берём только Имя + PIN, без фильтра по 'Активен',
@@ -112,7 +112,7 @@ class GoogleSheetsService:
 
         # Ищем колонки "Имя" и "PIN"
         idx_name = self._find_exact_col(header, ["Имя", "Name"])
-        idx_pin  = self._find_exact_col(header, ["PIN", "Пин", "Pin"])
+        idx_pin = self._find_exact_col(header, ["PIN", "Пин", "Pin"])
 
         print(
             "get_users: индексы колонок -> idx_name={0}, idx_pin={1}".format(
@@ -177,13 +177,13 @@ class GoogleSheetsService:
             if idx_name == -1 or len(row) <= idx_name:
                 continue
 
-            name = row[idx_name].strip()
+            name = str(row[idx_name]).strip()
             if not name:
                 continue
 
             m_id = f"mach_{i}"
             if idx_id != -1 and len(row) > idx_id:
-                val = row[idx_id].strip()
+                val = str(row[idx_id]).strip()
                 if val:
                     m_id = val
 
@@ -194,12 +194,12 @@ class GoogleSheetsService:
 
             if is_active:
                 type_allowed = (
-                    row[idx_type].strip()
+                    str(row[idx_type]).strip()
                     if idx_type != -1 and len(row) > idx_type
                     else ""
                 )
                 cat_allowed = (
-                    row[idx_cat].strip()
+                    str(row[idx_cat]).strip()
                     if idx_cat != -1 and len(row) > idx_cat
                     else ""
                 )
@@ -261,17 +261,17 @@ class GoogleSheetsService:
             brands.append(
                 Brand(
                     brand_name=b_name,
-                    type=row[idx_type].strip()
+                    type=str(row[idx_type]).strip()
                     if idx_type != -1 and len(row) > idx_type
                     else "",
-                    category=row[idx_cat].strip()
+                    category=str(row[idx_cat]).strip()
                     if idx_cat != -1 and len(row) > idx_cat
                     else "",
-                    recipe=row[idx_rec].strip()
+                    recipe=str(row[idx_rec]).strip()
                     if idx_rec != -1 and len(row) > idx_rec
                     else "",
                     items_per_box=qty,
-                    aliases=row[idx_alias].strip()
+                    aliases=str(row[idx_alias]).strip()
                     if idx_alias != -1 and len(row) > idx_alias
                     else "",
                 )
@@ -291,5 +291,3 @@ class GoogleSheetsService:
                 print("get_brands: не удалось вывести пример записи:", e)
 
         return brands
-
-
