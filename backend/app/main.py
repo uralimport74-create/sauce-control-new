@@ -79,9 +79,22 @@ def login(req: dict):
     users = sheets_service.get_users()
     user_id = req.get("user_id")
     pin_code = req.get("pin_code")
+
+    logger.info("LOGIN attempt: user_id=%s, pin_code=%s", user_id, pin_code)
+    logger.info("LOGIN users in memory: %s", [u.name for u in users])
+
     user = next((u for u in users if u.name == user_id), None)
+
+    if user:
+        logger.info("LOGIN found user: %s (stored pin=%s)", user.name, user.pin_code)
+    else:
+        logger.info("LOGIN user not found: %s", user_id)
+
     if user and str(user.pin_code).strip() == str(pin_code).strip():
+        logger.info("LOGIN success for %s", user_id)
         return {"success": True, "user": user}
+
+    logger.info("LOGIN failed for %s (bad pin?)", user_id)
     return {"success": False, "message": "Неверный ПИН"}
 
 
@@ -105,4 +118,5 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
