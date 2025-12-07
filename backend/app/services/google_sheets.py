@@ -151,34 +151,7 @@ class GoogleSheetsService:
         return machines
 
         def get_brands(self) -> List[Brand]:
-        """Читает лист brands и возвращает список Brand с подробным логированием"""
-        rows = self._get_values(["brands", "brands - brands", "Бренды"])
-        if not rows:
-            print("⚠️ get_brands: не нашли ни одной строки в листах ['brands', 'brands - brands', 'Бренды']")
-            return []
-
-        header = rows[0]
-        data = rows[1:]
-
-        print("get_brands: заголовки листа =", header)
-
-        # Ищем индексы колонок, поддерживаем несколько вариантов названий
-        idx_brand = self._find_exact_col(header, ["Бренд", "brand", "Brand"])
-        idx_type  = self._find_exact_col(header, ["Тип", "тип", "Type", "Тип упаковки"])
-        idx_cat   = self._find_exact_col(header, ["Категория", "category", "Category"])
-        idx_rec   = self._find_exact_col(header, ["Рецептура", "recipe", "Recipe"])
-        idx_qty   = self._find_exact_col(header, ["кол-во шт в коробке", "кол-во", "items", "qty"])
-        idx_alias = self._find_exact_col(header, ["aliases", "алиасы", "алиасы/aliases"])
-
-        print(
-            "get_brands: индексы колонок ->",
-            f"idx_brand={idx_brand}, idx_type={idx_type}, idx_cat={idx_cat},",
-            f"idx_rec={idx_rec}, idx_qty={idx_qty}, idx_alias={idx_alias}",
-        )
-
-        if idx_brand == -1:
-            print("❌ get_brands: не нашли колонку 'Бренд' — возвращаем пустой список")
-            return []
+    ...
 
         def safe_str(row, idx: int) -> str:
             if idx == -1 or idx >= len(row):
@@ -233,3 +206,4 @@ class GoogleSheetsService:
 
         # ВАЖНО: даже если type пустой, мы его возвращаем — фронт покажет пустой список типов
         return brands
+
