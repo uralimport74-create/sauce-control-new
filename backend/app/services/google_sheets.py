@@ -96,42 +96,61 @@ class GoogleSheetsService:
                     return i
         return -1
 
-    def get_users(self) -> List[User]:
-        # Ищем лист users (или brands - users)
+        def get_users(self) -> List[User]:
+        """
+        Читает лист users и возвращает список User.
+        Берём только Имя + PIN, без фильтра по 'Активен',
+        чтобы ничего случайно не отфильтровать.
+        """
         rows = self._get_values(["users", "brands - users", "Users", "Пользователи"])
         if not rows:
-            print("get_users: не нашли ни одного листа")
+            print("get_users: не нашли ни одного листа users")
             return []
 
         header = rows[0]
         data = rows[1:]
 
-        # Настраиваем поиск под ваши заголовки: "Имя", "PIN", "Активен"
+        # Ищем колонки "Имя" и "PIN"
         idx_name = self._find_exact_col(header, ["Имя", "Name"])
-        idx_pin = self._find_exact_col(header, ["PIN", "Пин", "Pin"])
-        idx_active = self._find_exact_col(header, ["Активен", "Active"])
+        idx_pin  = self._find_exact_col(header, ["PIN", "Пин", "Pin"])
+
+        print(
+            "get_users: индексы колонок -> idx_name={0}, idx_pin={1}".format(
+                idx_name, idx_pin
+            )
+        )
 
         users: List[User] = []
 
-        for row in data:
+        for i, row in enumerate(data, start=2):  # 2-я строка, т.к. 1-я — заголовки
             if idx_name == -1 or len(row) <= idx_name:
                 continue
 
-            name = row[idx_name].strip()
+            name = str(row[idx_name]).strip()
             if not name:
                 continue
 
-            pin = ""
+            pin = "0000"
             if idx_pin != -1 and len(row) > idx_pin:
-                pin = str(row[idx_pin]).strip()
+                val = str(row[idx_pin]).strip()
+                if val:
+                    pin = val
 
-            is_active = True
-            if idx_active != -1 and len(row) > idx_active:
-                if str(row[idx_active]).lower() not in ["true", "1", "yes"]:
-                    is_active = False
+            # Просто добавляем всех — без поля "Активен"
+            users.append(User(name=name, pin_code=pin, is_active=True))
 
-            if is_active:
-                users.append(User(name=name, pin_code=pin))
+        print("get_users: загружено пользователей:", len(users))
+        if users:
+            try:
+                example = users[0]
+                if hasattr(example, "dict"):
+                    print("get_users: пример первой записи:", example.dict())
+                elif hasattr(example, "model_dump"):
+                    print("get_users: пример первой записи:", example.model_dump())
+                else:
+                    print("get_users: пример первой записи (raw):", example)
+            except Exception as e:
+                print("get_users: не удалось вывести пример записи:", e)
 
         return users
 
@@ -272,4 +291,5 @@ class GoogleSheetsService:
                 print("get_brands: не удалось вывести пример записи:", e)
 
         return brands
+
 
