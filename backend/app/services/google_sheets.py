@@ -131,7 +131,7 @@ class GoogleSheetsService:
                     is_active = False
 
             if is_active:
-                users.append(User(name=name, pin=pin))
+                users.append(User(name=name, pin_code=pin))
 
         return users
 
@@ -272,3 +272,4 @@ class GoogleSheetsService:
                 print("get_brands: не удалось вывести пример записи:", e)
 
         return brands
+
