@@ -36,8 +36,15 @@ def ping():
     return {"status": "ok"}
 
 @app.get("/api/users")
-def get_users():
-    return sheets_service.get_users()
+def get_users_api():
+    users = sheets_service.get_users()
+    try:
+        count = len(users)
+    except TypeError:
+        count = -1
+
+    logger.info("GET /api/users -> %s пользователей: %s", count, [u.name for u in users])
+    return users
 
 @app.get("/api/machines")
 def get_machines():
@@ -98,3 +105,4 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
